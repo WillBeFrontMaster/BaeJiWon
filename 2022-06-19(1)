@@ -1,0 +1,115 @@
+# 호이스팅
+## 호이스팅의 개념
+- 코드에 선언된 변수 및 함수를 코드 상단으로 끌어올리는 것을 말함
+- 변수 범위가 전역인지 함수 범위인지에 따라 다르게 수행 
+- 함수 내에서 선언한 함수 범위의 변수는 해당 함수의 최상위
+- 전역 변수는 스크립트 단위의 최상위
+- 선언과 할당 내용 모두 상단으로 끌어올리는 것 x -> 선언 부분만 분리하여 최상위
+
+## 호이스팅의 대상
+- var변수 선언과 함수선언문에서만 호이스팅이 일어남
+-- var변수/ 함수의 선언만 위로 끌어 올려지며, 할당은 끌어 올려지지 않움
+-- let/const  변수 선언과 함수표현식에서는 호이스팅이 발생하지 않음 
+- 함수선언문과 함수표현식에서 서로 다르게 동작하기 때문에 주의
+-- 변수에 할당된 함수표현식은 끌어 올려지지 않기 떄문에 이떄는 변수의 스코프 규칙을 그대로 따름
+
+## 함수선언문과 함수표현식에서의 호이스팅
+### 함수선언문에서의 호이스팅
+- 함수 선언문은 코드를 구현한 위치와 관계없이 자바스크립트 특징인 호이스팅에 따라 브라우저가 자바스크립트를 해석할 때 맨 위로 끌어 올려짐
+- 즉, 함수선언문이 아래에 있어도 함수 내에서 function으로 인식하기 떄문에 오류 발생x
+
+### 함수표현식에서의 호이스팅
+- 함수표현식은 함수선언문과 달리 선언과 호출 순서에 따라서 정상적으로 함수가 실행되 않을 수 있음
+-- 함수표현식에서는 선언과 할당의 분리가 발생
+- 함수표현식의 선언이 호출보다 위에 있는 경우 -> 정상출력
+```
+function printName(firstname) { // 함수선언문
+     var inner = function() { // 함수표현식 
+         return "inner value";
+     }
+        
+     var result = inner(); // 함수 "호출"
+     console.log("name is " + result);
+ }
+
+ printName(); // > "name is inner value" 
+ ```
+ ```
+ /* 정상 */
+ /** --- JS Parser 내부의 호이스팅(Hoisting)의 결과 - 위와 동일 --- */
+ function printName(firstname) { 
+     var inner; // [Hoisting] 함수표현식의 변수값 "선언"
+     var result; // [Hoisting] var 변수값 "선언"
+
+     inner = function() { // 함수표현식 "할당"
+         return "inner value";
+     }
+        
+     result = inner(); // 함수 "호출"
+     console.log("name is " + result);
+ }
+
+ printName(); // > "name is inner value"
+ ```
+ - 함수표현식의 선언이 호출보다 아래에 있는 경우 (var 변수에 할당) - TypeError
+```
+/* 오류 */
+ function printName(firstname) { // 함수선언문
+     console.log(inner); // > "undefined": 선언은 되어 있지만 값이 할당되어있지 않은 경우
+     var result = inner(); // ERROR!!
+     console.log("name is " + result);
+
+     var inner = function() { // 함수표현식 
+         return "inner value";
+     }
+ }
+ printName(); // > TypeError: inner is not a function
+ ```
+ ```
+ /** --- JS Parser 내부의 호이스팅(Hoisting)의 결과 --- */
+ /* 오류 */
+ function printName(firstname) { 
+     var inner; // [Hoisting] 함수표현식의 변수값 "선언"
+
+     console.log(inner); // > "undefined"
+     var result = inner(); // ERROR!!
+     console.log("name is " + result);
+
+     inner = function() { 
+         return "inner value";
+     }
+ }
+ printName(); // > TypeError: inner is not a function
+ ```
+-Q. printName에서 “inner is not defined” 이라고 오류가 나오지 않고, “inner is not a function”이라는 TypeError가 나오는 이유?
+-A. printName이 실행되는 순간 (Hoisting에 의해) inner는 ‘undefined’으로 지정되기 때문
+-inner가 undefined라는 것은 아직은 함수로 인식이 되지 않고 있다는 것을 의미
+- 함수표현식의 선언이 호출보다 아래에 있는 경우 (const/let 변수에 할당) - ReferenceError
+```
+/* 오류 */
+ function printName(firstname) { // 함수선언문
+     console.log(inner); // ERROR!!
+     let result = inner();  
+     console.log("name is " + result);
+
+     let inner = function() { // 함수표현식 
+         return "inner value";
+     }
+ }
+ printName(); // > ReferenceError: inner is not defined
+ ```
+-let/const의 경우, 호이스팅이 일어나지 않기 때문에 위의 예시 그대로 이해하면 됨
+-console.log(inner);에서 inner에 대한 선언이 되어있지 않기 때문에 이때는 “inner is not defined” 오류가 발생
+
+=>함수표현식보다 함수선언문을 더 자주 사용하지만, 어떤 코딩컨벤션에서는 함수표현식을 권장
+
+## 호이스팅 우선순위
+### 같은 이름의 var 변수 선언과 함수 선언에서의 호이스팅
+- 변수선언이 함수 선언보다 위로 끌어 올려짐
+- 값이 할당되어 있지 않은 변수와 값이 할당되어 있는 변수에서의 호이스팅
+--> 값이 할당되어 있지 않은 변수의 경우, 함수 선언문이 변수를 덮어씀
+--> 값이 할당되어 있는 변수의 경우, 변수가 함수선언문을 덮어씀
+
+## 호이스팅 사용시 주의해야 할 점
+- 코드의 가독성과 유지보수를 위해 호이스팅이 일어나지 않도록 한다.
+- let/const를 사용
